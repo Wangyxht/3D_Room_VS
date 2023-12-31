@@ -1,4 +1,14 @@
-﻿#include <iostream>
+﻿/*****************************************************************************
+        FILE : submit.c (Assignment 1)
+        NOTE : you have to implement functions in this file
+*****************************************************************************/
+/*****************************************************************************
+        Student Information
+        Student ID: 072140206
+        Student Name: 王宇轩
+*****************************************************************************/
+
+#include <iostream>
 
 // OpenGL及其附属库头文件
 #include <glad/glad.h>
@@ -51,9 +61,9 @@ void framebuffer_size_callback(GLFWwindow *window, int width, int height) {
 
 /**
  * 鼠标操作回调函数
- * @param window
- * @param xposIn
- * @param yposIn
+ * @param window 窗口
+ * @param xposIn 鼠标x位置
+ * @param yposIn 鼠标y位置
  */
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
@@ -863,9 +873,6 @@ int main() {
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
         glBindVertexArray(0);
-
-
-
 
         // 更换缓存
         glfwSwapBuffers(window);
