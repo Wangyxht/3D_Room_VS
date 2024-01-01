@@ -317,22 +317,22 @@ int main() {
     // 加载着色器信息
     // ______________________________________________________________
     // 基础着色器
-    auto* basicShader = new Shader("shader/vertex.glsl" ,
+    Shader* basicShader = new Shader("shader/vertex.glsl" ,
                                    "shader/fragment.glsl");
     // 光源着色器
-    auto* lightShader = new Shader("Shader/vertex.glsl",
+    Shader* lightShader = new Shader("Shader/vertex.glsl",
                                    "Shader/lightFragment.glsl");
 
     // 发光物体着色器
-    auto* lightingShader = new Shader("shader/vertex.glsl",
+    Shader* lightingShader = new Shader("shader/vertex.glsl",
                                    "shader/mutiLightFragment.glsl");
 
     // 模型绘制基础着色器
-    auto* modelShader = new Shader("shader/modelVertex.glsl",
+    Shader* modelShader = new Shader("shader/modelVertex.glsl",
                                    "shader/modelFragment.glsl");
 
     // 光照模型着色器
-    auto* modelLightingShader = new Shader("shader/modelLightingVertex.glsl",
+    Shader* modelLightingShader = new Shader("shader/modelLightingVertex.glsl",
                                    "shader/modelLightingFragment.glsl");
     // 加载纹理材质信息
     // ______________________________________________________________
@@ -645,7 +645,7 @@ int main() {
             default:
                 break;
         }
-
+       
         lightingShader->setBool("LightStatus[1]", lampLight);
         lightingShader->setVec3f("pointLights[1].position", glm::vec3(0.15, 0.3, -4.0));
         lightingShader->setVec3f("pointLights[1].ambient", glm::vec3(0.05f, 0.05f, 0.05f));
@@ -990,6 +990,7 @@ int main() {
 
         model = glm::mat4(1.0f);
         model = glm::translate(model, glm::vec3(-3.35, 0.2, -3.5));
+        model = glm::rotate(model, (float)glm::radians(fanSpeed * glfwGetTime()), glm::vec3(1.0, 0.0, 0.0));
         model = glm::scale(model, glm::vec3(0.05, 0.05, 0.05));
         lightingShader->setMat4f("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
@@ -1057,5 +1058,23 @@ int main() {
     glfwTerminate();
 
     delete(basicShader);
+    delete(lightShader);
+    delete(modelShader);
+    delete(lightingShader);
+    delete(modelLightingShader);
+
+    delete(testBoxTexture);
+    delete(testBoxSpecularTexture);
+    delete(tableTexture);
+    delete(tvTexture);
+    delete(wallTexture);
+    delete(pillowTexture);
+    delete(carpetTexture);
+    delete(chairTexture);
+    delete(lampTexture);
+    delete(grassTexture);
+    delete(ceilingTexture);
+    delete(bedTexture);
+
     return 0;
 }
