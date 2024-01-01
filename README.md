@@ -80,8 +80,8 @@ Total                                                       100%
 - P: 枕头位置调整
 - ←(LEFT): 符华模型转速向反方向增加
 - →(RIGHT): 符华模型转速向正方向增加
-- ↓(DOWN):主灯调亮
-- ↑(UP):主灯调暗或关闭
+- ↓(DOWN):主灯调暗或关闭
+- ↑(UP):主灯调亮
 
 ## 参考资料
 [1] OpenGL Learn CN https://learnopengl-cn.github.io/
