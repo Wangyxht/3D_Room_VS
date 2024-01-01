@@ -12,7 +12,7 @@
 
 // OpenGL及其附属库头文件
 #include <glad/glad.h>
-#include <GLFW//glfw3.h>
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
@@ -38,14 +38,28 @@ float lastY = SCR_HEIGHT / 2.0f;
 float deltaTime = 0.0f;
 bool firstMouse = true;
 
+// 手电筒开关状态
 bool flashLight = false;
+// 台灯开关状态
 bool lampLight = false;
+// 枕头位置状态
 bool pillowFront = false;
+// 芙卡洛斯视角状态
 bool FocalorsSee = false;
+// 电视开启状态
 bool tvOff = true;
+// 室内光照状态
 int roomCenterLight = 1;
-
+// 符华手办的旋转速度
 float FUHUA_rotateSpeed = 500.0f;
+// 光照玩具方块速度
+float lightCubeSpeed = 1.0f;
+// 光照玩具的绘图状态
+int lightCubeMovement = 1;
+// 光照玩具的绘图位置
+glm::vec3 lightCubePos = glm::vec3(-1.0f, -0.0f, -1.0f);
+// 风扇转速
+float fanSpeed = 500.0f;
 
 static Camera camera(glm::vec3(0.0f, 0.0f, 0.0f));
 
@@ -128,6 +142,28 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
     if (key == GLFW_KEY_T && action == GLFW_PRESS) {
         tvOff = !tvOff;
+    }
+    if (key == GLFW_KEY_1 && action == GLFW_PRESS) {
+        lightCubeMovement = 1;
+    }
+    if (key == GLFW_KEY_2 && action == GLFW_PRESS) {
+        lightCubeMovement = 2;
+    }
+    if (key == GLFW_KEY_3 && action == GLFW_PRESS) {
+        lightCubeMovement = 3;
+    }
+    if (key == GLFW_KEY_0 && action == GLFW_PRESS) {
+        lightCubeMovement = 0;
+    }
+    if (key == GLFW_KEY_EQUAL && action == GLFW_PRESS) {
+        fanSpeed += 500.0f;
+        fanSpeed = fanSpeed >= 3000.0f ?
+            3000.0f : fanSpeed;
+    }
+    if (key == GLFW_KEY_MINUS && action == GLFW_PRESS) {
+        fanSpeed -= 500.0f;
+        fanSpeed = fanSpeed <= 0.0f ?
+            0.0f : fanSpeed;
     }
 }
 
@@ -223,6 +259,10 @@ int main() {
         return -1;
     }
 
+    /**
+     * 方块顶点数据文件
+     * 前三个点为坐标位置，中间三个点为法向量位置，最后两个点为纹理坐标位置
+     */
     float cube[] = {
             -0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  0.0f,  0.0f,
             0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,  1.0f,  0.0f,
@@ -330,6 +370,9 @@ int main() {
     // 电视纹理
     auto* tvTexture = new TextureInf("texture/TV.jpg");
 
+    // 地毯纹理
+    auto* carpetTexture = new TextureInf("texture/carpet.jpg");
+
     // 绑定VAO与VBO
     // ______________________________________________________________
     unsigned int cubeVAO, cubeVBO;
@@ -353,10 +396,35 @@ int main() {
         auto projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
         auto model = glm::mat4 (1.0f);
 
+        // 计算玩具灯的具体位置
+        switch (lightCubeMovement)
+        {
+        case 1: // 绘制圆
+            lightCubePos = glm::vec3(
+                -1.0 + cos(glfwGetTime() * lightCubeSpeed), 
+                -0.25, 
+                -1.0 + sin(glfwGetTime() * lightCubeSpeed));
+            break;
+        case 2: // 绘制水滴型
+            lightCubePos = glm::vec3(
+                -1.0 + cos(glfwGetTime() * lightCubeSpeed) * cos(glfwGetTime() * lightCubeSpeed), 
+                -0.25, 
+                -1.0 + powf(cos(glfwGetTime() * lightCubeSpeed), 3) * sin(glfwGetTime() * lightCubeSpeed));
+            break;
+        case 3: // 绘制心形线
+            lightCubePos = glm::vec3(
+                -1.0 + 0.5 * (1 - cos(glfwGetTime() * lightCubeSpeed)) * cos(glfwGetTime() * lightCubeSpeed),
+                -0.25,
+                -1.0 + 0.5 * (1 - cos(glfwGetTime() * lightCubeSpeed)) * sin(glfwGetTime() * lightCubeSpeed));
+        default:
+            break;
+        }
+
         // 处理IO输入
         ProcessInput(window);
 
         // 绑定纹理
+        // __________________________________________________________
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, testBoxTexture->getID());
         glActiveTexture(GL_TEXTURE1);
@@ -381,11 +449,15 @@ int main() {
         glBindTexture(GL_TEXTURE_2D, pillowTexture->getID());
         glActiveTexture(GL_TEXTURE11);
         glBindTexture(GL_TEXTURE_2D, tvTexture->getID());
+        glActiveTexture(GL_TEXTURE12);
+        glBindTexture(GL_TEXTURE_2D, carpetTexture->getID());
 
         // 清除缓存
         glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
+        //绘制模型
+        // __________________________________________________________
         modelShader->use();
         modelShader->setMat4f("view", view);
         modelShader->setMat4f("projection", projection);
@@ -418,6 +490,9 @@ int main() {
         modelLightingShader->setMat4f("projection", projection);
         modelLightingShader->setFloat("shininess", 64.0f);
 
+        // 初始化冯氏光照模型
+        // __________________________________________________________
+        
         // 平行光初始化
         modelLightingShader->setVec3f("dirLight.direction",glm::vec3(0.0f, 0.0f, 1.0f));
         modelLightingShader->setVec3f("dirLight.ambient", glm::vec3(0.05f, 0.05f, 0.05f));
@@ -484,6 +559,15 @@ int main() {
         modelLightingShader->setFloat("pointLights[2].linear", 0.35f);
         modelLightingShader->setFloat("pointLights[2].quadratic", 0.44f);
 
+        modelLightingShader->setBool("LightStatus[3]", true);
+        modelLightingShader->setVec3f("pointLights[3].position", lightCubePos);
+        modelLightingShader->setVec3f("pointLights[3].ambient", glm::vec3(0.05f, 0.05f, 0.05f));
+        modelLightingShader->setVec3f("pointLights[3].diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+        modelLightingShader->setVec3f("pointLights[3].specular", glm::vec3(1.0f, 1.0f, 1.0f));
+        modelLightingShader->setFloat("pointLights[3].constant", 1.0f);
+        modelLightingShader->setFloat("pointLights[3].linear", 0.7f);
+        modelLightingShader->setFloat("pointLights[3].quadratic", 1.8f);
+
         // 手电筒聚光初始化
         modelLightingShader->setVec3f("spotLight.position", camera.Position);
         modelLightingShader->setVec3f("spotLight.direction", camera.Front);
@@ -518,6 +602,9 @@ int main() {
         lightingShader->use();
         lightingShader->setVec3f("viewPos", camera.Position);
         lightingShader->setFloat("material.shininess", 64.0f);
+
+        // 初始化冯氏光照模型
+        // __________________________________________________________
 
         // 平行光初始化
         lightingShader->setVec3f("dirLight.direction",glm::vec3(0.0f, 0.0f, 1.0f));
@@ -577,6 +664,15 @@ int main() {
         lightingShader->setFloat("pointLights[2].linear", 0.35f);
         lightingShader->setFloat("pointLights[2].quadratic", 0.44f);
 
+        lightingShader->setBool("LightStatus[3]", true);
+        lightingShader->setVec3f("pointLights[3].position", lightCubePos);
+        lightingShader->setVec3f("pointLights[3].ambient", glm::vec3(0.05f, 0.05f, 0.05f));
+        lightingShader->setVec3f("pointLights[3].diffuse", glm::vec3(0.8f, 0.8f, 0.8f));
+        lightingShader->setVec3f("pointLights[3].specular", glm::vec3(1.0f, 1.0f, 1.0f));
+        lightingShader->setFloat("pointLights[3].constant", 1.0f);
+        lightingShader->setFloat("pointLights[3].linear", 0.7f);
+        lightingShader->setFloat("pointLights[3].quadratic", 1.8f);
+
         // 手电筒聚光初始化
         lightingShader->setVec3f("spotLight.position", camera.Position);
         lightingShader->setVec3f("spotLight.direction", camera.Front);
@@ -602,7 +698,8 @@ int main() {
         lightingShader->setMat4f("view", view);
         lightingShader->setMat4f("projection", projection);
 
-        // 绘制草地
+        // 绘制草地与地板
+        // __________________________________________________________
         glBindVertexArray(cubeVAO);
         for(float locx = -10.0; locx <= 10.0; locx += 1.0){
             for(float locz = -10.0; locz <= 10.0; locz += 1.0){
@@ -849,6 +946,72 @@ int main() {
         lightingShader->setMat4f("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 
+        // 绘制地毯
+        // __________________________________________________________
+        lightingShader->setInt("material.diffuse", 12);
+        lightingShader->setInt("material.specular", 12);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-1.0, -0.3, -1.0));
+        model = glm::scale(model, glm::vec3(2, 0.02, 2));
+        lightingShader->setMat4f("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        lightingShader->setInt("material.diffuse", 12);
+        lightingShader->setInt("material.specular", 12);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-3.5, -0.3, -1.0));
+        model = glm::scale(model, glm::vec3(2, 0.02, 2));
+        lightingShader->setMat4f("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        // 绘制立式风扇
+        // __________________________________________________________
+        lightingShader->setInt("material.diffuse", 8);
+        lightingShader->setInt("material.specular", 8);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-3.5, -0.3, -3.5));
+        model = glm::scale(model, glm::vec3(0.05, 1, 0.05));
+        lightingShader->setMat4f("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        lightingShader->setInt("material.diffuse", 8);
+        lightingShader->setInt("material.specular", 8);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-3.5, -0.3, -3.5));
+        model = glm::scale(model, glm::vec3(0.3, 0.01, 0.3));
+        lightingShader->setMat4f("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-3.5, 0.2, -3.5));
+        model = glm::scale(model, glm::vec3(0.3, 0.1, 0.1));
+        lightingShader->setMat4f("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-3.35, 0.2, -3.5));
+        model = glm::scale(model, glm::vec3(0.05, 0.05, 0.05));
+        lightingShader->setMat4f("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        lightingShader->setInt("material.diffuse", 7);
+        lightingShader->setInt("material.specular", 7);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-3.30, 0.2, -3.5));
+        model = glm::rotate(model, (float)glm::radians(fanSpeed * glfwGetTime()), glm::vec3(1.0, 0.0, 0.0));
+        model = glm::scale(model, glm::vec3(0.05, 0.01, 0.4));
+        lightingShader->setMat4f("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        lightingShader->setInt("material.diffuse", 7);
+        lightingShader->setInt("material.specular", 7);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, glm::vec3(-3.30, 0.2, -3.5));
+        model = glm::rotate(model, (float)glm::radians(fanSpeed * glfwGetTime()), glm::vec3(1.0, 0.0, 0.0));
+        model = glm::scale(model, glm::vec3(0.05, 0.4, 0.01));
+        lightingShader->setMat4f("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
         // 绘制灯泡
         // __________________________________________________________
         lightShader->use();
@@ -869,6 +1032,17 @@ int main() {
         model = glm::mat4 (1.0f);
         model = glm::translate(model, glm::vec3 (glm::vec3(0.15, 0.3, -4.0)));
         model = glm::scale(model, glm::vec3(0.1,0.1,0.1));
+        lightShader->setMat4f("model", model);
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        // 绘制玩具灯
+        // __________________________________________________________
+        lightShader->use();
+        lightShader->setMat4f("view", view);
+        lightShader->setMat4f("projection", projection);
+        model = glm::mat4(1.0f);
+        model = glm::translate(model, lightCubePos);
+        model = glm::scale(model, glm::vec3(0.1, 0.1, 0.1));
         lightShader->setMat4f("model", model);
         glDrawArrays(GL_TRIANGLES, 0, 36);
 

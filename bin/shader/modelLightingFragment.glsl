@@ -39,7 +39,7 @@ struct SpotLight {
     vec3 specular;// 镜面反射强度
 };
 
-#define NR_POINT_LIGHTS 3
+#define NR_POINT_LIGHTS 4
 in vec3 FragPos;
 in vec3 Normal;
 in vec2 TexCoords;
